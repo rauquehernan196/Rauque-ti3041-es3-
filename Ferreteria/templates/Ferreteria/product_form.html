@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</title>
-    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}?v=brand-home-link-1">
 </head>
 <body class="admin-shell-body">
     <div class="admin-shell">
         <aside class="admin-sidebar">
-            <div class="sidebar-brand">
+            <a class="sidebar-brand" href="{% url 'inicio' %}" aria-label="Osorno Herramientas: ir al inicio">
                 <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="Escudo de Osorno Herramientas: una vaquita con llaves y engranes">
                 <span>Osorno Herramientas</span>
-            </div>
+            </a>
             <nav class="sidebar-nav">
                 <a href="{% url 'admin_dashboard' %}">Dashboard</a>
                 <a href="{% url 'producto_nuevo' %}">Nuevo producto</a>

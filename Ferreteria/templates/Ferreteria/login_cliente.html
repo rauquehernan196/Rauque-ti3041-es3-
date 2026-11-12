@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión</title>
-    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}?v=brand-home-link-1">
 </head>
 <body class="auth-page">
     <div class="auth-shell">
         <div class="auth-card">
-            <div class="auth-brand">
+            <a class="auth-brand" href="{% url 'inicio' %}" aria-label="Osorno Herramientas: ir al inicio">
                 <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="Escudo de Osorno Herramientas: una vaquita con llaves y engranes">
                 <span>Osorno Herramientas</span>
-            </div>
+            </a>
             <h1>Iniciar sesión</h1>
             <p>Accede para completar tu compra.</p>
 

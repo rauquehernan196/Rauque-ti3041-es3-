@@ -3,13 +3,14 @@
 {% block title %}Enviar consulta | Osorno Herramientas{% endblock %}
 
 {% block content %}
-    <header class="report-heading">
+    <header class="report-heading consulta-heading">
         <p class="kicker">Atención al cliente</p>
         <h1>Envíanos tu consulta</h1>
         <p>Cuéntanos qué necesitas y nos pondremos en contacto contigo.</p>
     </header>
 
     <section class="report-card consulta-card">
+        <p class="consulta-required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
         <form method="post" class="consulta-form">
             {% csrf_token %}
             {% if form.non_field_errors %}
@@ -24,7 +25,7 @@
                     {% endif %}
                 </div>
             {% endfor %}
-            <button type="submit" class="primary-btn">Enviar consulta</button>
+            <button type="submit" class="primary-btn consulta-submit">Enviar consulta</button>
         </form>
     </section>
 {% endblock %}

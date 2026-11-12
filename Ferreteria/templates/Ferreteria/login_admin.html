@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso administrador</title>
-    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}?v=brand-home-link-1">
 </head>
 <body class="admin-auth-body">
     <div class="admin-auth-shell">
         <div class="admin-auth-card">
-            <div class="admin-auth-brand">
+            <a class="admin-auth-brand" href="{% url 'inicio' %}" aria-label="Osorno Herramientas: ir al inicio">
                 <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="Escudo de Osorno Herramientas: una vaquita con llaves y engranes">
                 <span>Osorno Herramientas</span>
-            </div>
+            </a>
             <h1>Panel administrativo</h1>
             <p>Inicia sesión para gestionar productos y usuarios.</p>
 

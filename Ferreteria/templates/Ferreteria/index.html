@@ -6,15 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Osorno Herramientas</title>
     <meta name="description" content="Landing page premium para ferretería, tienda online y administración integrada.">
-    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}?v=cart-refresh-1">
 </head>
 <body class="premium-body">
     <header class="instagram-header premium-header">
         <div class="container instagram-nav">
-            <div class="brand" aria-label="Osorno Herramientas">
+            <a class="brand" href="{% url 'inicio' %}" aria-label="Osorno Herramientas: ir al inicio">
                 <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="Escudo de Osorno Herramientas: una vaquita con llaves y engranes">
                 <span>Osorno Herramientas</span>
-            </div>
+            </a>
 
             <div class="search-box" aria-label="Buscar productos">
                 <span>⌕</span>
@@ -23,14 +23,17 @@
 
             <div class="nav-actions" aria-label="Acciones de navegación">
                 <a href="{% url 'consulta_cliente' %}" class="secondary-btn small-btn">Enviar consulta</a>
-                <a href="{% url 'carrito' %}" class="icon-button cart-button" aria-label="Carrito">🛒</a>
+                <a href="{% url 'carrito' %}" class="icon-button cart-button" aria-label="Carrito de compras: {{ total_carrito }} {% if total_carrito == 1 %}artículo{% else %}artículos{% endif %}">
+                    🛒
+                    {% if total_carrito %}<span class="cart-count" aria-hidden="true">{{ total_carrito }}</span>{% endif %}
+                </a>
                 {% if user.is_authenticated %}
                     <div class="profile-pill">
                         <div class="avatar">{{ user.username|slice:':1'|upper }}</div>
                         <span>{{ user.username }}</span>
                     </div>
                     {% if user.is_staff and user.username == 'Admin1' %}
-                        <a href="/admin/" class="primary-btn small-btn" target="_blank" rel="noopener">Panel Admin</a>
+                        <a href="{% url 'admin_dashboard' %}" class="primary-btn small-btn">Panel Admin</a>
                     {% endif %}
                     <a href="{% url 'logout_cliente' %}" class="secondary-btn small-btn">Salir</a>
                 {% else %}
@@ -111,6 +114,38 @@
             </div>
         </section>
 
+        <section class="product-carousel-section" aria-labelledby="product-carousel-title">
+            <div class="container">
+                <div class="carousel-heading">
+                    <div>
+                        <p class="carousel-kicker">Selección de la tienda</p>
+                        <h2 id="product-carousel-title">Encuentra tu próxima herramienta</h2>
+                        <p>Explora los productos disponibles y ve directamente a agregarlos al carrito.</p>
+                    </div>
+                    <div class="carousel-controls" aria-label="Controles del carrusel">
+                        <button type="button" class="carousel-control" data-carousel-prev aria-label="Productos anteriores">‹</button>
+                        <button type="button" class="carousel-control" data-carousel-next aria-label="Productos siguientes">›</button>
+                    </div>
+                </div>
+
+                <div class="product-carousel-track" id="featured-product-carousel" aria-label="Todos los productos disponibles">
+                    {% for producto in productos %}
+                    <a class="carousel-product" href="#producto-compra-{{ producto.pk }}" aria-label="{{ producto.nombre }}, ${{ producto.precio }}. Ir a agregar al carrito">
+                        <div class="carousel-product-image">
+                            <img src="{{ producto.imagen_url }}" alt="">
+                        </div>
+                        <span class="product-tag">{{ producto.categoria }}</span>
+                        <strong>{{ producto.nombre }}</strong>
+                        <span class="carousel-product-price">${{ producto.precio }}</span>
+                        <span class="carousel-product-link">Ver y agregar <span aria-hidden="true">→</span></span>
+                    </a>
+                    {% empty %}
+                    <p class="carousel-empty">No hay productos disponibles en este momento.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
         <section class="trust-bar">
             <div class="container trust-grid">
                 <div><span>✔️</span> Calidad premium</div>
@@ -179,7 +214,7 @@
                                     <div class="stock">Stock: {{ producto.stock }}</div>
                                 </div>
                             </div>
-                            <a href="{% url 'agregar_al_carrito' producto.pk %}" class="buy-btn">Agregar al carrito</a>
+                            <a href="{% url 'agregar_al_carrito' producto.pk %}" class="buy-btn" id="producto-compra-{{ producto.pk }}">Agregar al carrito</a>
                         </div>
                     </article>
                     {% empty %}
@@ -222,5 +257,71 @@
             </div>
         </div>
     </footer>
+    <script>
+        const productCarousel = document.getElementById('featured-product-carousel');
+        if (productCarousel) {
+            const carouselSection = document.querySelector('.product-carousel-section');
+            const rotationDelay = 3500;
+            let rotationTimer;
+
+            function scrollProducts(direction, visibleRatio = 0.8) {
+                const maxScroll = productCarousel.scrollWidth - productCarousel.clientWidth;
+                const distance = productCarousel.clientWidth * visibleRatio;
+                const remaining = direction > 0
+                    ? maxScroll - productCarousel.scrollLeft
+                    : productCarousel.scrollLeft;
+
+                if (maxScroll <= 0) {
+                    return;
+                }
+                if (remaining <= 2) {
+                    productCarousel.scrollTo({
+                        left: direction > 0 ? 0 : maxScroll,
+                        behavior: 'smooth',
+                    });
+                } else if (remaining < distance) {
+                    productCarousel.scrollTo({
+                        left: direction > 0 ? maxScroll : 0,
+                        behavior: 'smooth',
+                    });
+                } else {
+                    productCarousel.scrollBy({
+                        left: direction * distance,
+                        behavior: 'smooth',
+                    });
+                }
+            }
+
+            function stopRotation() {
+                window.clearInterval(rotationTimer);
+                rotationTimer = undefined;
+            }
+
+            function startRotation() {
+                stopRotation();
+                if (
+                    document.hidden
+                    || carouselSection.matches(':hover')
+                    || carouselSection.contains(document.activeElement)
+                ) {
+                    return;
+                }
+                rotationTimer = window.setInterval(() => scrollProducts(1, 0.55), rotationDelay);
+            }
+
+            document.querySelector('[data-carousel-prev]').addEventListener('click', () => scrollProducts(-1));
+            document.querySelector('[data-carousel-next]').addEventListener('click', () => scrollProducts(1));
+            carouselSection.addEventListener('mouseenter', stopRotation);
+            carouselSection.addEventListener('mouseleave', startRotation);
+            carouselSection.addEventListener('focusin', stopRotation);
+            carouselSection.addEventListener('focusout', (event) => {
+                if (!carouselSection.contains(event.relatedTarget)) {
+                    startRotation();
+                }
+            });
+            document.addEventListener('visibilitychange', startRotation);
+            startRotation();
+        }
+    </script>
 </body>
 </html>

@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo completo | Osorno Herramientas</title>
-    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}?v=cart-refresh-1">
 </head>
 <body class="premium-body">
     <header class="instagram-header">
         <div class="container instagram-nav">
-            <div class="brand" aria-label="Osorno Herramientas">
+            <a class="brand" href="{% url 'inicio' %}" aria-label="Osorno Herramientas: ir al inicio">
                 <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="Escudo de Osorno Herramientas: una vaquita con llaves y engranes">
                 <span>Osorno Herramientas</span>
-            </div>
+            </a>
 
             <div class="search-box" aria-label="Buscar productos">
                 <span>⌕</span>
@@ -21,7 +21,10 @@
             </div>
 
             <div class="nav-actions">
-                <a href="{% url 'carrito' %}" class="icon-button cart-button" aria-label="Carrito">🛒</a>
+                <a href="{% url 'carrito' %}" class="icon-button cart-button" aria-label="Carrito de compras: {{ total_carrito }} {% if total_carrito == 1 %}artículo{% else %}artículos{% endif %}">
+                    🛒
+                    {% if total_carrito %}<span class="cart-count" aria-hidden="true">{{ total_carrito }}</span>{% endif %}
+                </a>
                 {% if user.is_authenticated %}
                     <div class="profile-pill">
                         <div class="avatar">{{ user.username|slice:':1'|upper }}</div>

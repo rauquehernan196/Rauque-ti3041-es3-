@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .forms import (
@@ -115,6 +116,13 @@ def agregar_al_carrito(request, producto_id):
     request.session['carrito'] = carrito
     request.session.modified = True
     messages.success(request, f'{producto.nombre} fue agregado al carrito.')
+    referer = request.META.get('HTTP_REFERER')
+    if referer and url_has_allowed_host_and_scheme(
+        referer,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(referer)
     return redirect('inicio')
 
 
@@ -230,6 +238,7 @@ def admin_dashboard(request):
         'productos_activos': productos_activos,
         'productos_archivados': productos_archivados,
         'active_tab': active_tab,
+        'visitas_sesion': request.session.get('visitas_inicio', 0),
     })
 
 

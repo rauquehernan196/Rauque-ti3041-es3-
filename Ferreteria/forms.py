@@ -25,12 +25,34 @@ class ConsultaClienteForm(forms.ModelForm):
     class Meta:
         model = ConsultaCliente
         fields = ['nombre', 'correo', 'mensaje', 'producto_interes']
+        labels = {
+            'nombre': 'Nombre completo',
+            'correo': 'Correo electrónico',
+            'mensaje': '¿En qué podemos ayudarte?',
+            'producto_interes': 'Producto de interés (opcional)',
+        }
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'name'}),
-            'correo': forms.EmailInput(attrs={'class': 'form-control', 'autocomplete': 'email'}),
-            'mensaje': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'autocomplete': 'name',
+                'placeholder': 'Escribe tu nombre',
+            }),
+            'correo': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'autocomplete': 'email',
+                'placeholder': 'nombre@correo.com',
+            }),
+            'mensaje': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 6,
+                'placeholder': 'Cuéntanos qué necesitas (mínimo 20 caracteres)',
+            }),
             'producto_interes': forms.Select(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['producto_interes'].empty_label = 'Sin un producto específico'
 
 
 class RegistroUsuarioForm(UserCreationForm):

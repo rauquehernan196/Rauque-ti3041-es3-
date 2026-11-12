@@ -36,6 +36,13 @@ class DashboardAndProductsTests(TestCase):
         self.assertContains(response, self.active_product.nombre)
         self.assertNotContains(response, self.archived_product.nombre)
 
+    def test_home_product_carousel_links_to_each_active_product_cart_button(self):
+        response = self.client.get(reverse('inicio'))
+
+        self.assertContains(response, f'href="#producto-compra-{self.active_product.pk}"')
+        self.assertContains(response, f'id="producto-compra-{self.active_product.pk}"')
+        self.assertNotContains(response, f'href="#producto-compra-{self.archived_product.pk}"')
+
     def test_customer_consultation_is_saved_and_confirmed(self):
         response = self.client.post(
             reverse('consulta_cliente'),
@@ -57,17 +64,25 @@ class DashboardAndProductsTests(TestCase):
         self.assertIn(ConsultaCliente, admin.site._registry)
 
     def test_consultation_form_rejects_missing_invalid_and_short_fields(self):
-        form = ConsultaClienteForm(data={
+        invalid_data = {
             'nombre': 'Jo',
             'correo': 'no-es-un-correo',
             'mensaje': 'Muy corto',
             'producto_interes': '',
-        })
+        }
+        form = ConsultaClienteForm(data=invalid_data)
 
         self.assertFalse(form.is_valid())
         self.assertIn('nombre', form.errors)
         self.assertIn('correo', form.errors)
         self.assertIn('mensaje', form.errors)
+        self.assertFalse(ConsultaCliente.objects.exists())
+
+        response = self.client.post(reverse('consulta_cliente'), invalid_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('nombre', response.context['form'].errors)
+        self.assertIn('correo', response.context['form'].errors)
+        self.assertIn('mensaje', response.context['form'].errors)
         self.assertFalse(ConsultaCliente.objects.exists())
 
         missing_fields_form = ConsultaClienteForm(data={})
@@ -95,6 +110,16 @@ class DashboardAndProductsTests(TestCase):
         response = self.client.get(reverse('inicio'))
         self.assertEqual(response.context['visitas_sesion'], 2)
 
+    def test_admin_profile_displays_session_visit_count(self):
+        self.client.login(username='Admin1', password='Admin123!')
+        self.client.get(reverse('inicio'))
+
+        response = self.client.get(reverse('admin_dashboard'))
+
+        self.assertEqual(response.context['visitas_sesion'], 1)
+        self.assertContains(response, 'Visitas al inicio en esta sesión')
+        self.assertContains(response, '<strong class="sidebar-session-count">1</strong>')
+
     def test_admin_dashboard_requires_staff_login(self):
         response = self.client.get(reverse('admin_dashboard'))
         self.assertEqual(response.status_code, 302)
@@ -102,6 +127,44 @@ class DashboardAndProductsTests(TestCase):
         self.client.login(username='Admin1', password='Admin123!')
         response = self.client.get(reverse('admin_dashboard'))
         self.assertEqual(response.status_code, 200)
+
+    def test_homepage_admin_button_opens_custom_dashboard(self):
+        self.client.login(username='Admin1', password='Admin123!')
+
+        response = self.client.get(reverse('inicio'))
+
+        self.assertContains(response, f'href="{reverse("admin_dashboard")}"')
+        self.assertNotContains(response, 'href="/admin/"')
+
+    def test_store_logo_and_name_link_to_home_from_every_module(self):
+        self.client.login(username='Admin1', password='Admin123!')
+        pages = [
+            ('inicio', [], 'brand'),
+            ('catalogo', [], 'brand'),
+            ('carrito', [], 'brand'),
+            ('consulta_cliente', [], 'brand'),
+            ('reporte_categorias', [], 'brand'),
+            ('reporte_stock_critico', [], 'brand'),
+            ('login_cliente', [], 'auth-brand'),
+            ('login_admin', [], 'admin-auth-brand'),
+            ('registro', [], 'auth-brand'),
+            ('admin_dashboard', [], 'sidebar-brand'),
+            ('producto_nuevo', [], 'sidebar-brand'),
+            ('usuario_editar', [self.user.pk], 'sidebar-brand'),
+        ]
+
+        for route_name, route_args, brand_class in pages:
+            with self.subTest(page=route_name):
+                page_client = Client() if brand_class in {
+                    'auth-brand',
+                    'admin-auth-brand',
+                } else self.client
+                response = page_client.get(reverse(route_name, args=route_args))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(
+                    response,
+                    f'<a class="{brand_class}" href="{reverse("inicio")}"',
+                )
 
     def test_admin_can_create_edit_and_delete_products_from_dashboard(self):
         self.client.login(username='Admin1', password='Admin123!')
@@ -256,6 +319,39 @@ class DashboardAndProductsTests(TestCase):
         response = self.client.post(reverse('agregar_al_carrito', args=[self.active_product.pk]))
         self.assertEqual(response.status_code, 302)
         self.assertIn(str(self.active_product.pk), self.client.session.get('carrito', {}))
+
+    def test_adding_products_keeps_catalog_open_and_updates_cart_count(self):
+        catalog_url = reverse('catalogo')
+        catalog_referer = f'http://testserver{catalog_url}'
+        add_url = reverse('agregar_al_carrito', args=[self.active_product.pk])
+
+        for expected_quantity in (1, 2):
+            response = self.client.get(add_url, HTTP_REFERER=catalog_referer)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, catalog_referer)
+
+            response = self.client.get(catalog_url)
+            article_label = 'artículo' if expected_quantity == 1 else 'artículos'
+            self.assertContains(
+                response,
+                f'<span class="cart-count" aria-hidden="true">{expected_quantity}</span>',
+            )
+            self.assertContains(
+                response,
+                f'aria-label="Carrito de compras: {expected_quantity} {article_label}"',
+            )
+
+        response = self.client.get(reverse('carrito'))
+        self.assertContains(response, self.active_product.nombre)
+        self.assertContains(response, '<strong>2</strong>')
+
+    def test_adding_product_rejects_external_referer_redirects(self):
+        response = self.client.get(
+            reverse('agregar_al_carrito', args=[self.active_product.pk]),
+            HTTP_REFERER='https://example.org/outside',
+        )
+
+        self.assertRedirects(response, reverse('inicio'), fetch_redirect_response=False)
 
     def test_confirmar_compra_requires_login(self):
         response = self.client.post(reverse('confirmar_compra'))
