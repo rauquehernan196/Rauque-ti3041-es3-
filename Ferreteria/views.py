@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .forms import (
@@ -201,12 +202,16 @@ def admin_dashboard(request):
     usuarios = User.objects.order_by('-date_joined')
     productos_activos = productos.filter(archivado=False).count()
     productos_archivados = productos.filter(archivado=True).count()
+    active_tab = request.GET.get('tab', 'overview')
+    if active_tab not in {'overview', 'products', 'users'}:
+        active_tab = 'overview'
 
     return render(request, 'Ferreteria/admin_dashboard.html', {
         'productos': productos,
         'usuarios': usuarios,
         'productos_activos': productos_activos,
         'productos_archivados': productos_archivados,
+        'active_tab': active_tab,
     })
 
 
@@ -216,13 +221,16 @@ def product_form(request, pk=None):
     redirect_result = require_admin1(request)
     if redirect_result is not None:
         return redirect_result
-    producto = Producto.objects.get(pk=pk) if pk else None
-    form = ProductoForm(request.POST or None, instance=producto)
+    producto = get_object_or_404(Producto, pk=pk) if pk is not None else None
+    form = ProductoForm(
+        request.POST if request.method == 'POST' else None,
+        instance=producto,
+    )
 
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Producto guardado correctamente.')
-        return redirect('admin_dashboard')
+        return redirect(f"{reverse('admin_dashboard')}?tab=products")
 
     return render(request, 'Ferreteria/product_form.html', {
         'form': form,
@@ -238,12 +246,12 @@ def toggle_archivo(request, pk):
     if redirect_result is not None:
         return redirect_result
 
-    producto = Producto.objects.get(pk=pk)
+    producto = get_object_or_404(Producto, pk=pk)
     producto.archivado = not producto.archivado
     producto.save()
     estado = 'archivado' if producto.archivado else 'visible'
     messages.success(request, f'El producto quedó {estado} en el feed de compradores.')
-    return redirect('admin_dashboard')
+    return redirect(f"{reverse('admin_dashboard')}?tab=products")
 
 
 @login_required(login_url='login_admin')
@@ -254,10 +262,10 @@ def delete_producto(request, pk):
     if redirect_result is not None:
         return redirect_result
 
-    producto = Producto.objects.get(pk=pk)
+    producto = get_object_or_404(Producto, pk=pk)
     producto.delete()
     messages.success(request, 'Producto eliminado correctamente.')
-    return redirect('admin_dashboard')
+    return redirect(f"{reverse('admin_dashboard')}?tab=products")
 
 
 @login_required(login_url='login_admin')

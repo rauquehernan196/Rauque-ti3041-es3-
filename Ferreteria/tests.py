@@ -42,6 +42,54 @@ class DashboardAndProductsTests(TestCase):
         response = self.client.get(reverse('admin_dashboard'))
         self.assertEqual(response.status_code, 200)
 
+    def test_admin_can_create_edit_and_delete_products_from_dashboard(self):
+        self.client.login(username='Admin1', password='Admin123!')
+        product_list_url = f"{reverse('admin_dashboard')}?tab=products"
+
+        response = self.client.post(
+            reverse('producto_nuevo'),
+            {
+                'nombre': 'Llave ajustable',
+                'categoria': 'Herramientas',
+                'precio': 12500,
+                'stock': 6,
+                'imagen': '',
+            },
+        )
+        self.assertRedirects(response, product_list_url)
+        product = Producto.objects.get(nombre='Llave ajustable')
+
+        response = self.client.get(product_list_url)
+        self.assertEqual(response.context['active_tab'], 'products')
+        self.assertContains(response, product.nombre)
+        self.assertContains(response, "return confirm('¿Deseas eliminar este producto?')")
+
+        response = self.client.post(
+            reverse('producto_editar', args=[product.pk]),
+            {
+                'nombre': 'Llave ajustable reforzada',
+                'categoria': 'Herramientas',
+                'precio': 14990,
+                'stock': 4,
+                'imagen': '',
+            },
+        )
+        self.assertRedirects(response, product_list_url)
+        product.refresh_from_db()
+        self.assertEqual(product.nombre, 'Llave ajustable reforzada')
+        self.assertEqual(product.precio, 14990)
+
+        delete_url = reverse('producto_eliminar', args=[product.pk])
+        response = self.client.get(delete_url)
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Producto.objects.filter(pk=product.pk).exists())
+
+        response = self.client.post(delete_url)
+        self.assertRedirects(response, product_list_url)
+        self.assertFalse(Producto.objects.filter(pk=product.pk).exists())
+        response = self.client.get(product_list_url)
+        self.assertNotContains(response, 'Llave ajustable reforzada')
+
     def test_only_admin1_can_access_admin_panel(self):
         get_user_model().objects.filter(username='Admin1').delete()
         get_user_model().objects.create_user(
