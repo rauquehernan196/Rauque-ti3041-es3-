@@ -207,3 +207,54 @@ button, a {
         justify-content: center;
     }
 }
+
+.consulta-card {
+    max-width: 760px;
+}
+
+.consulta-form {
+    display: grid;
+    gap: 18px;
+}
+
+.consulta-field {
+    display: grid;
+    gap: 8px;
+}
+
+.consulta-field label {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.consulta-field label span {
+    color: var(--secondary);
+}
+
+.consulta-form input,
+.consulta-form select,
+.consulta-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+}
+
+.consulta-form input:focus,
+.consulta-form select:focus,
+.consulta-form textarea:focus {
+    outline: 3px solid rgba(40,102,79,0.16);
+    border-color: var(--secondary);
+}
+
+.visit-note {
+    margin-top: 18px;
+    color: var(--muted);
+}
+
+.visit-note strong {
+    color: var(--secondary);
+}

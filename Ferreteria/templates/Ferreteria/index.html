@@ -22,6 +22,7 @@
             </div>
 
             <div class="nav-actions" aria-label="Acciones de navegación">
+                <a href="{% url 'consulta_cliente' %}" class="secondary-btn small-btn">Enviar consulta</a>
                 <a href="{% url 'carrito' %}" class="icon-button cart-button" aria-label="Carrito">🛒</a>
                 {% if user.is_authenticated %}
                     <div class="profile-pill">
@@ -77,6 +78,7 @@
                             <span>Despacho</span>
                         </div>
                     </div>
+                    <p class="visit-note">Visitas a esta página en esta sesión: <strong>{{ visitas_sesion }}</strong></p>
                 </div>
 
                 <div class="hero-visual premium-visual" aria-label="Vista de producto destacado">

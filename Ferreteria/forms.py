@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
-from .models import Producto
+from .models import ConsultaCliente, Producto
 
 User = get_user_model()
 
@@ -18,6 +18,18 @@ class ProductoForm(forms.ModelForm):
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'imagen': forms.TextInput(attrs={'class': 'form-control'}),
             'archivado': forms.CheckboxInput(attrs={'class': 'checkbox-input'}),
+        }
+
+
+class ConsultaClienteForm(forms.ModelForm):
+    class Meta:
+        model = ConsultaCliente
+        fields = ['nombre', 'correo', 'mensaje', 'producto_interes']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'name'}),
+            'correo': forms.EmailInput(attrs={'class': 'form-control', 'autocomplete': 'email'}),
+            'mensaje': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+            'producto_interes': forms.Select(attrs={'class': 'form-control'}),
         }
 
 

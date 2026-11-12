@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     ClienteLoginForm,
+    ConsultaClienteForm,
     ProductoForm,
     RegistroUsuarioForm,
     UserEditForm,
@@ -18,6 +19,8 @@ from .models import Producto
 
 
 def index(request):
+    visitas_sesion = request.session.get('visitas_inicio', 0) + 1
+    request.session['visitas_inicio'] = visitas_sesion
     productos = Producto.objects.filter(archivado=False).order_by('-id')
     total_productos = Producto.objects.filter(archivado=False).count()
     carrito = request.session.get('carrito', {})
@@ -27,8 +30,22 @@ def index(request):
         'productos': productos,
         'total_productos': total_productos,
         'total_carrito': total_carrito,
+        'visitas_sesion': visitas_sesion,
     }
     return render(request, 'Ferreteria/index.html', context)
+
+
+def consulta_cliente(request):
+    if request.method == 'POST':
+        form = ConsultaClienteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tu consulta fue enviada correctamente. Te contactaremos pronto.')
+            return redirect('consulta_cliente')
+    else:
+        form = ConsultaClienteForm()
+
+    return render(request, 'Ferreteria/consulta_cliente.html', {'form': form})
 
 
 def catalogo(request):

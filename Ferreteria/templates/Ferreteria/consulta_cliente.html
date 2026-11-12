@@ -1,0 +1,30 @@
+{% extends "Ferreteria/base.html" %}
+
+{% block title %}Enviar consulta | Osorno Herramientas{% endblock %}
+
+{% block content %}
+    <header class="report-heading">
+        <p class="kicker">Atención al cliente</p>
+        <h1>Envíanos tu consulta</h1>
+        <p>Cuéntanos qué necesitas y nos pondremos en contacto contigo.</p>
+    </header>
+
+    <section class="report-card consulta-card">
+        <form method="post" class="consulta-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="message error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+                <div class="consulta-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="error-text">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="primary-btn">Enviar consulta</button>
+        </form>
+    </section>
+{% endblock %}

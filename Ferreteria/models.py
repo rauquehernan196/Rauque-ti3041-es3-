@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinLengthValidator
 
 
 class Producto(models.Model):
@@ -30,3 +31,21 @@ class Producto(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class ConsultaCliente(models.Model):
+    nombre = models.CharField(max_length=100, validators=[MinLengthValidator(3)])
+    correo = models.EmailField()
+    mensaje = models.TextField(validators=[MinLengthValidator(20)])
+    producto_interes = models.ForeignKey(
+        Producto,
+        on_delete=models.SET_NULL,
+        related_name='consultas_cliente',
+        blank=True,
+        null=True,
+        verbose_name='Producto de interés',
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Consulta de {self.nombre} ({self.fecha:%Y-%m-%d})'

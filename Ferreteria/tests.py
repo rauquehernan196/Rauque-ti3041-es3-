@@ -1,8 +1,10 @@
+from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Producto
+from .forms import ConsultaClienteForm
+from .models import ConsultaCliente, Producto
 
 
 class DashboardAndProductsTests(TestCase):
@@ -33,6 +35,65 @@ class DashboardAndProductsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.active_product.nombre)
         self.assertNotContains(response, self.archived_product.nombre)
+
+    def test_customer_consultation_is_saved_and_confirmed(self):
+        response = self.client.post(
+            reverse('consulta_cliente'),
+            {
+                'nombre': 'Cliente de prueba',
+                'correo': 'cliente@example.com',
+                'mensaje': 'Necesito más información sobre este producto.',
+                'producto_interes': self.active_product.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('consulta_cliente'), fetch_redirect_response=False)
+        consulta = ConsultaCliente.objects.get(correo='cliente@example.com')
+        self.assertEqual(consulta.producto_interes, self.active_product)
+        self.assertIsNotNone(consulta.fecha)
+        response = self.client.get(reverse('consulta_cliente'))
+        self.assertContains(response, 'Tu consulta fue enviada correctamente')
+        self.assertIn(ConsultaCliente, admin.site._registry)
+
+    def test_consultation_form_rejects_missing_invalid_and_short_fields(self):
+        form = ConsultaClienteForm(data={
+            'nombre': 'Jo',
+            'correo': 'no-es-un-correo',
+            'mensaje': 'Muy corto',
+            'producto_interes': '',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('nombre', form.errors)
+        self.assertIn('correo', form.errors)
+        self.assertIn('mensaje', form.errors)
+        self.assertFalse(ConsultaCliente.objects.exists())
+
+        missing_fields_form = ConsultaClienteForm(data={})
+        self.assertFalse(missing_fields_form.is_valid())
+        self.assertIn('nombre', missing_fields_form.errors)
+        self.assertIn('correo', missing_fields_form.errors)
+        self.assertIn('mensaje', missing_fields_form.errors)
+
+    def test_consultation_post_is_protected_by_csrf(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post(reverse('consulta_cliente'), {
+            'nombre': 'Cliente de prueba',
+            'correo': 'cliente@example.com',
+            'mensaje': 'Necesito información sobre herramientas.',
+        })
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(ConsultaCliente.objects.exists())
+
+    def test_homepage_counts_visits_in_session(self):
+        response = self.client.get(reverse('inicio'))
+        self.assertEqual(response.context['visitas_sesion'], 1)
+        self.assertContains(response, 'Visitas a esta página en esta sesión')
+
+        response = self.client.get(reverse('inicio'))
+        self.assertEqual(response.context['visitas_sesion'], 2)
 
     def test_admin_dashboard_requires_staff_login(self):
         response = self.client.get(reverse('admin_dashboard'))
