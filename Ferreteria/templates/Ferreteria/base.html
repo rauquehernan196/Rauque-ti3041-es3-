@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Reportes | Osorno Herramientas{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'Ferreteria/css/style.css' %}">
+</head>
+<body class="premium-body">
+    <header class="instagram-header">
+        <div class="container instagram-nav report-nav">
+            <a class="brand" href="{% url 'inicio' %}">
+                <img class="brand-mark" src="{% static 'Ferreteria/osorno-logo.svg' %}" alt="">
+                <span>Osorno Herramientas</span>
+            </a>
+            <nav class="site-nav" aria-label="Navegación de reportes">
+                <a href="{% url 'admin_dashboard' %}">Panel</a>
+                <a href="{% url 'reporte_categorias' %}">Reporte por categoría</a>
+                <a href="{% url 'reporte_stock_critico' %}">Stock crítico</a>
+            </nav>
+        </div>
+    </header>
+
+    {% if messages %}
+        <div class="container message-stack">
+            {% for message in messages %}
+                <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main class="container reports-main">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

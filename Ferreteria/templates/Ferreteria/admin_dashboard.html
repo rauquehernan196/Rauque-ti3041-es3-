@@ -25,6 +25,8 @@
                 <button class="tab-btn {% if active_tab == 'products' %}active{% endif %}" data-tab="products" type="button">Productos</button>
                 <button class="tab-btn {% if active_tab == 'users' %}active{% endif %}" data-tab="users" type="button">Usuarios</button>
                 <a href="{% url 'producto_nuevo' %}">Nuevo producto</a>
+                <a href="{% url 'reporte_categorias' %}">Reporte por categoría</a>
+                <a href="{% url 'reporte_stock_critico' %}">Reporte de stock crítico</a>
                 <a href="{% url 'logout_admin' %}">Cerrar sesión</a>
             </nav>
         </aside>

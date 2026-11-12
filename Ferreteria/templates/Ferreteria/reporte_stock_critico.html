@@ -1,0 +1,48 @@
+{% extends "Ferreteria/base.html" %}
+
+{% block title %}Reporte de stock crítico | Osorno Herramientas{% endblock %}
+
+{% block content %}
+    <header class="report-heading">
+        <p class="kicker">Reporte 2</p>
+        <h1>Productos con stock crítico</h1>
+        <p>Productos activos con existencias iguales o menores a {{ umbral_stock }} unidades.</p>
+    </header>
+
+    <section class="report-card" aria-label="Listado de productos con stock crítico">
+        <div class="report-table-wrap">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos_criticos %}
+                    <tr>
+                        <td><strong>{{ producto.nombre }}</strong></td>
+                        <td>{{ producto.categoria }}</td>
+                        <td>${{ producto.precio }}</td>
+                        <td>{{ producto.stock }}</td>
+                        <td>
+                            {% if producto.stock == 0 %}
+                                <span class="report-status is-empty">Sin stock</span>
+                            {% else %}
+                                <span class="report-status is-critical">Reponer</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No hay productos activos bajo el umbral de stock crítico.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

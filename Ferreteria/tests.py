@@ -90,6 +90,71 @@ class DashboardAndProductsTests(TestCase):
         response = self.client.get(product_list_url)
         self.assertNotContains(response, 'Llave ajustable reforzada')
 
+    def test_category_report_uses_database_aggregations(self):
+        Producto.objects.create(
+            nombre='Taladro compacto',
+            categoria='Herramientas Eléctricas',
+            precio=10000,
+            stock=2,
+        )
+        self.client.login(username='Admin1', password='Admin123!')
+
+        response = self.client.get(reverse('reporte_categorias'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'Ferreteria/reporte_categorias.html')
+        self.assertTemplateUsed(response, 'Ferreteria/base.html')
+        summary = next(
+            row for row in response.context['resumen']
+            if row['categoria'] == 'Herramientas Eléctricas'
+        )
+        self.assertEqual(summary['cantidad_registros'], 2)
+        self.assertEqual(summary['precio_promedio'], 24995)
+        self.assertEqual(summary['stock_total'], 10)
+        self.assertContains(response, 'Stock crítico')
+
+    def test_critical_stock_report_filters_and_orders_active_products(self):
+        Producto.objects.create(
+            nombre='Llave con poco stock',
+            categoria='Herramientas',
+            precio=5000,
+            stock=3,
+        )
+        Producto.objects.create(
+            nombre='Producto agotado',
+            categoria='Herramientas',
+            precio=3000,
+            stock=0,
+        )
+        Producto.objects.create(
+            nombre='Archivado con poco stock',
+            categoria='Herramientas',
+            precio=4000,
+            stock=1,
+            archivado=True,
+        )
+        self.client.login(username='Admin1', password='Admin123!')
+
+        response = self.client.get(reverse('reporte_stock_critico'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'Ferreteria/reporte_stock_critico.html')
+        self.assertEqual(response.context['umbral_stock'], 5)
+        products = list(response.context['productos_criticos'])
+        self.assertEqual(
+            [product.nombre for product in products],
+            ['Producto agotado', 'Llave con poco stock'],
+        )
+        self.assertContains(response, 'Productos activos con existencias iguales o menores a 5')
+        self.assertNotContains(response, 'Archivado con poco stock')
+
+    def test_inventory_reports_require_admin_login(self):
+        for report_name in ('reporte_categorias', 'reporte_stock_critico'):
+            with self.subTest(report=report_name):
+                response = self.client.get(reverse(report_name))
+                self.assertEqual(response.status_code, 302)
+                self.assertIn('/login/', response.url)
+
     def test_only_admin1_can_access_admin_panel(self):
         get_user_model().objects.filter(username='Admin1').delete()
         get_user_model().objects.create_user(

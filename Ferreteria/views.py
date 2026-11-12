@@ -3,6 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -212,6 +213,45 @@ def admin_dashboard(request):
         'productos_activos': productos_activos,
         'productos_archivados': productos_archivados,
         'active_tab': active_tab,
+    })
+
+
+@login_required(login_url='login_admin')
+@staff_member_required(login_url='login_admin')
+def reporte_categorias(request):
+    redirect_result = require_admin1(request)
+    if redirect_result is not None:
+        return redirect_result
+
+    resumen = (
+        Producto.objects.values('categoria')
+        .annotate(
+            cantidad_registros=Count('pk'),
+            precio_promedio=Avg('precio'),
+            stock_total=Sum('stock'),
+        )
+        .order_by('categoria')
+    )
+    return render(request, 'Ferreteria/reporte_categorias.html', {
+        'resumen': resumen,
+    })
+
+
+@login_required(login_url='login_admin')
+@staff_member_required(login_url='login_admin')
+def reporte_stock_critico(request):
+    redirect_result = require_admin1(request)
+    if redirect_result is not None:
+        return redirect_result
+
+    umbral_stock = 5
+    productos_criticos = (
+        Producto.objects.filter(archivado=False, stock__lte=umbral_stock)
+        .order_by('stock', 'categoria', 'nombre')
+    )
+    return render(request, 'Ferreteria/reporte_stock_critico.html', {
+        'productos_criticos': productos_criticos,
+        'umbral_stock': umbral_stock,
     })
 
 
